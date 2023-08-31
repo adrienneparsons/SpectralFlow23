@@ -1,6 +1,5 @@
-# Adrienne Parsons
+# Adrienne Parsons, Harmony integration of BM flow samples
 # May 22, 2023
-
 
 # Prerequisites
 library(Seurat)
@@ -10,14 +9,16 @@ library(Matrix)
 library(ggplot2)
 library(ggrastr)
 
-# Harmony integration of BM flow samples
+# Start with a clean slate
+rm(list=ls())
 
-samp1 <- read.csv("~/Data/Harmony integration of BM samples/20230522_BMsample_fromOMIQ_pre-scaling/20230522_BMsample_fromOMIQ_pre-scaling_livecells/020222 VAN GALEN PANEL unmixed-ALL_Unmixed.csv")
-samp2 <- read.csv("~/Data/Harmony integration of BM samples/20230522_BMsample_fromOMIQ_pre-scaling/20230522_BMsample_fromOMIQ_pre-scaling_livecells/032822 VAN GALEN PANEL-ALL-Unmixed.csv")
-samp3 <- read.csv("~/Data/Harmony integration of BM samples/20230522_BMsample_fromOMIQ_pre-scaling/20230522_BMsample_fromOMIQ_pre-scaling_livecells/07142022 BM ONLY.csv")
+# Load data that was exported from OMIQ
+samp1 <- read.csv("020222 VAN GALEN PANEL unmixed-ALL_Unmixed.csv")
+samp2 <- read.csv("032822 VAN GALEN PANEL-ALL-Unmixed.csv")
+samp3 <- read.csv("07142022 BM ONLY.csv")
 
 # Prepare for Harmony by merging the data and making a Seurat object
-seu.ls <- vector(mode = "list", length = 3)
+seu.ls <- vector(mode = "list", length = 0)
 
 for(sample in c("samp1", "samp2", "samp3")){
   print(sample)
@@ -30,7 +31,8 @@ for(sample in c("samp1", "samp2", "samp3")){
   rownames(df) <- paste0(sample, "_", rownames(df))
   
   # Create Seurat object
-  seu <- CreateSeuratObject(counts = t(df), 
+  seu <- CreateSeuratObject(counts = t(df),
+                            data = t(df),
                             project = sample)
   
   # Add it to the list
@@ -38,11 +40,8 @@ for(sample in c("samp1", "samp2", "samp3")){
 }
 
 # Merge
-seu.all <- merge(x = seu.ls[[4]], y = seu.ls[[5]])
-seu.all <- merge(x = seu.all, y = seu.ls[[6]])  
-
-# Make the data slot the same as the uploaded MFI data
-seu.all@assays$RNA@data <- seu.all@assays$RNA@counts
+seu.all <- merge(x = seu.ls[[1]], y = seu.ls[[2]])
+seu.all <- merge(x = seu.all, y = seu.ls[[3]])  
 
 # The values from scaling in OMIQ are already normalized, and variable features
 # Are not necessary to compute (there are only 33 features to compare)
@@ -85,17 +84,17 @@ rownames(samp2a) <- NULL
 rownames(samp3a) <- NULL
 
 # Re-format the columnn names so OMIQ will read them
-colnames <- c("Time", "SSC-H", "SSC-A",	"FSC-H", "FSC-A", "SSC-B-H", "SSC-B-A",
+colnames <- c("Time", "SSC-H", "SSC-A", "FSC-H", "FSC-A", "SSC-B-H", "SSC-B-A",
                      "BV421-A",
-                     "cFluor V450-A",	"BV480-A",	"BV510-A",
-                     "cFluor V547-A",	"BV570-A",	"BV605-A",	
-                     "BV650-A",	"BV711-A",	"BV750-A",	"BV785-A",
-                     "BB515-A",	"cFluor B548-A","NovaFL Blue 610-70S-A",	"cFluor B677-A",
-                     "BB700-A",	"BB755-A",	"cFluor BYG575-A",
-                     "cFluor YG584-A",	"cFluor BYG610-A", "cFluor YG610-A",
-                     "PE-Fire 640-A",	"cFluor BYG667-A",	"cFluor BYG710-A", "PerCP eFl 710-A",
-                     "cFluor BYG750-A",	"cFluor BYG781-A",	"cFluor R659-A",	"cFluor R685-A",
-                     "cFluor R720-A",	"ViaDye Red-A", "cFluor R780-A",	"cFluor R840-A", "AF-A",
+                     "cFluor V450-A", "BV480-A", "BV510-A",
+                     "cFluor V547-A", "BV570-A", "BV605-A", 
+                     "BV650-A", "BV711-A", "BV750-A", "BV785-A",
+                     "BB515-A", "cFluor B548-A", "NovaFL Blue 610-70S-A", "cFluor B677-A",
+                     "BB700-A", "BB755-A", "cFluor BYG575-A",
+                     "cFluor YG584-A", "cFluor BYG610-A", "cFluor YG610-A",
+                     "PE-Fire 640-A", "cFluor BYG667-A", "cFluor BYG710-A", "PerCP eFl 710-A",
+                     "cFluor BYG750-A", "cFluor BYG781-A", "cFluor R659-A", "cFluor R685-A",
+                     "cFluor R720-A", "ViaDye Red-A", "cFluor R780-A", "cFluor R840-A", "AF-A",
                      "UMAP_1", "UMAP_2")
 
 colnames(samp1a) <- colnames
