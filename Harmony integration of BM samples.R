@@ -11,6 +11,7 @@ library(ggrastr)
 library(dplyr)
 library(tidyr)
 library(forcats)
+library(lisi)
 
 # Harmony integration of BM flow samples
 # Load in the samples
@@ -127,6 +128,22 @@ write.FCS(fframe_s3,"20230522_BMSample3.fcs", what="numeric", delimiter = "\\")
 #For bone marrow, calculate the proportion of pre-Harmony LISI scores 
 # that fall above n-1 (2)
 
+# Load in the pre-Harmony BMC coordinates
+# Load in the UMAP Coordinates for the pre-Harmony BM samples
+samp1_pre_coords <- read.csv("/Users/addie/Downloads/omiq_exported_data BM_UMAP-coordinates/07142022 BM ONLY.csv")
+samp2_pre_coords <- read.csv("/Users/addie/Downloads/omiq_exported_data BM_UMAP-coordinates/032822 VAN GALEN PANEL-ALL-Unmixed.csv")
+samp3_pre_coords <- read.csv("/Users/addie/Downloads/omiq_exported_data BM_UMAP-coordinates/020222 VAN GALEN PANEL unmixed-ALL_Unmixed.csv")
+
+# Merge the coordinates and labels for each pre-Harmony sample
+all_sample_preharm_coords <- rbind(samp1_pre_coords, samp2_pre_coords)
+all_sample_preharm_coords <- rbind(all_sample_preharm_coords, samp3_pre_coords)
+
+all_sample_preharm_labels <- data.frame("Label" = c(rep("samp1", 50000), rep("samp2", 50000), rep("samp3", 50000)))
+
+# Calculate the LISI sscores for the pre-Harmony BM samples
+res_BM_preharm <- compute_lisi(all_sample_preharm_coords, all_sample_preharm_labels,"Label")
+
+
 # First, add the labels to the results
 res_BM_preharm$Sample <- all_sample_preharm_labels$Label
 
@@ -138,6 +155,8 @@ for(donor in unique(res_BM_preharm$Sample)){
   props_list_BM <- append(props_list_BM, props)
 }
 
+# Make the list a numeric vector
+props_list_BM <- unlist(props_list_BM)
 
 #Generate a pre-Harmony UMAP for each PBMC UMAP, to be used later
 # Argument passed to function is the directory where pre-Harmony UMAP coordinates
@@ -323,9 +342,8 @@ final_LISIdata2$Label <- c(rep("PBMC_3146", 8), "BMC_1", rep("PBMC_3156", 8),
                            "BMC_2", rep("PBMC_958", 8), "BMC_3", rep("Average", 9))
 
 # Add an annotation for whether the data is BMC, PBMC, or average
-final_LISIdata2$Shape <- "PBMCs"
-final_LISIdata2$Shape[final_LISIdata2$Label == "Average"] <- "Average"
-final_LISIdata2$Shape[c(9, 18, 27)] <- "BMC"
+final_LISIdata2$Shape <- "Per donor"
+final_LISIdata2$Shape[final_LISIdata2$Label == "Average"] <- "Mean for UMAP"
 
 # Plot the data
 plot <- ggplot(na.omit(final_LISIdata2), aes(x = fct_relevel(name,
@@ -351,9 +369,9 @@ plot <- ggplot(na.omit(final_LISIdata2), aes(x = fct_relevel(name,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
   scale_color_manual(values = c("green3", "green3", "orange", "orange", "deepskyblue2",
                                 "deepskyblue2", "red"))+
-  scale_shape_manual(values = c(16, 17, 15))+
+  scale_shape_manual(values = c(15, 16))+
   theme(aspect.ratio = 1)+
-  xlab("Sample")+
+  xlab("UMAP")+
   ylab("Proportion high LISI cells")+
   theme(legend.title = element_blank())+
   theme(axis.text = element_text(size = 16))+
